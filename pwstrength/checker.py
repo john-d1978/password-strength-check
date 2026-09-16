@@ -10,9 +10,11 @@ show up constantly in breach dumps.
 
 from __future__ import annotations
 
+import importlib.resources
 import math
 import unicodedata
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 LOWER = "abcdefghijklmnopqrstuvwxyz"
 UPPER = LOWER.upper()
@@ -25,16 +27,21 @@ KEYBOARD_ROWS = [
     "1234567890",
 ]
 
-# Passwords that sit at the top of essentially every breach-derived
-# frequency list. Not exhaustive, just enough to catch the obvious ones.
-COMMON_PASSWORDS = {
-    "password", "password1", "123456", "123456789", "12345678", "1234567",
-    "qwerty", "qwerty123", "111111", "sunshine", "iloveyou", "admin",
-    "welcome", "monkey", "login", "abc123", "starwars", "dragon",
-    "letmein", "football",
-}
-
 LABELS = ["very weak", "weak", "fair", "strong", "very strong"]
+
+
+@lru_cache(maxsize=1)
+def _common_passwords() -> frozenset[str]:
+    """Load the bundled breach-derived password list.
+
+    Cached because it's read from disk once per process and then reused
+    for every call to assess().
+    """
+    path = importlib.resources.files(__package__) / "data" / "common_passwords.txt"
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return frozenset(
+        line.strip() for line in lines if line.strip() and not line.startswith("#")
+    )
 
 
 @dataclass
@@ -140,7 +147,7 @@ def assess(password: str) -> Result:
         reasons.append("contains a keyboard walk (e.g. qwerty, asdf)")
         bits -= 12
 
-    if password.lower() in COMMON_PASSWORDS:
+    if password.lower() in _common_passwords():
         reasons.append("this is one of the most commonly breached passwords")
         bits = 0.0
 

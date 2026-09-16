@@ -7,7 +7,7 @@ empty strings, whitespace, emoji, keyboard walks, and boundary lengths.
 
 import unittest
 
-from pwstrength.checker import assess
+from pwstrength.checker import _common_passwords, assess
 
 # name, password, (score_min, score_max), reason fragments that must be
 # present (case-insensitive substring match), reason fragments that must
@@ -20,6 +20,13 @@ CASES = [
     ("descending digit run", "987654321", (0, 0), ["sequence"], []),
     ("keyboard walk", "qwertyui", (0, 1), ["keyboard"], []),
     ("common breached password", "password1", (0, 0), ["breach"], []),
+    (
+        "common password only in bundled wordlist, not the old inline set",
+        "gorilla",
+        (0, 0),
+        ["breach"],
+        [],
+    ),
     ("repeated emoji", "\U0001F525" * 8, (0, 0), ["repeated"], []),
     ("short but all character classes", "Zz9!", (0, 1), ["characters"], []),
     (
@@ -76,6 +83,22 @@ class ConsistencyTests(unittest.TestCase):
         shorter = assess("Xk9#mQ2!").score
         longer = assess("Xk9#mQ2!Zp7$wL4^").score
         self.assertGreaterEqual(longer, shorter)
+
+
+class CommonPasswordsTests(unittest.TestCase):
+    def test_wordlist_loads_and_is_nonempty(self):
+        words = _common_passwords()
+        self.assertIsInstance(words, frozenset)
+        self.assertGreater(len(words), 20)
+
+    def test_wordlist_entries_are_lowercase_with_no_blanks_or_comments(self):
+        for word in _common_passwords():
+            self.assertEqual(word, word.lower())
+            self.assertTrue(word)
+            self.assertFalse(word.startswith("#"))
+
+    def test_repeated_calls_return_the_same_cached_object(self):
+        self.assertIs(_common_passwords(), _common_passwords())
 
 
 if __name__ == "__main__":

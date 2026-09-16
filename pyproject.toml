@@ -15,3 +15,6 @@ pwstrength = "pwstrength.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["pwstrength*"]
+
+[tool.setuptools.package-data]
+pwstrength = ["data/*.txt"]
