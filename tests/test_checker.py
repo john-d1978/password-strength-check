@@ -7,7 +7,7 @@ empty strings, whitespace, emoji, keyboard walks, and boundary lengths.
 
 import unittest
 
-from pwstrength.checker import _common_passwords, assess
+from pwstrength.checker import _common_passwords, _delete_leet, assess
 
 # name, password, (score_min, score_max), reason fragments that must be
 # present (case-insensitive substring match), reason fragments that must
@@ -20,6 +20,20 @@ CASES = [
     ("descending digit run", "987654321", (0, 0), ["sequence"], []),
     ("keyboard walk", "qwertyui", (0, 1), ["keyboard"], []),
     ("common breached password", "password1", (0, 0), ["breach"], []),
+    (
+        "leetspeak common password",
+        "p4ssw0rd",
+        (0, 0),
+        ["resembles", "swapped"],
+        [],
+    ),
+    (
+        "leetspeak longer breached password",
+        "l3tm31n",
+        (0, 1),
+        ["resembles", "letmein"],
+        [],
+    ),
     (
         "common password only in bundled wordlist, not the old inline set",
         "gorilla",
@@ -83,6 +97,23 @@ class ConsistencyTests(unittest.TestCase):
         shorter = assess("Xk9#mQ2!").score
         longer = assess("Xk9#mQ2!Zp7$wL4^").score
         self.assertGreaterEqual(longer, shorter)
+
+
+class LeetspeakTests(unittest.TestCase):
+    def test_delete_leet_maps_digits_and_symbols_to_letters(self):
+        self.assertEqual(_delete_leet("p4ssw0rd"), "password")
+        self.assertEqual(_delete_leet("L3tM31n"), "letmein")
+
+    def test_delete_leet_leaves_unmapped_characters_alone(self):
+        # "9" and "%" have no letter they commonly stand in for, so they
+        # should pass through unchanged rather than being dropped.
+        self.assertEqual(_delete_leet("Xk9%"), "xk9%")
+
+    def test_no_false_positive_when_deleeted_form_is_not_common(self):
+        # "Zq4rP0lm" doesn't deleet to anything in the wordlist, so it
+        # shouldn't be flagged as resembling a breached password.
+        result = assess("Zq4rP0lm")
+        self.assertNotIn("resembles", " ".join(result.reasons).lower())
 
 
 class CommonPasswordsTests(unittest.TestCase):

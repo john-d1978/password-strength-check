@@ -11,7 +11,8 @@ uppercase, digits, symbols, non-ASCII) and the length, then knocks that
 estimate down for the things that make a password easier to guess than
 its raw entropy suggests: repeated characters, ascending or descending
 runs like `abcd` or `4321`, keyboard walks like `qwerty` or `asdf`, and a
-short list of passwords that show up constantly in breach dumps.
+short list of passwords that show up constantly in breach dumps -- including
+leetspeak variants of them, like `p4ssw0rd` for `password`.
 
 It does not check passwords against a network service, does not log
 anything, and does not depend on anything outside the Python standard

@@ -29,6 +29,29 @@ KEYBOARD_ROWS = [
 
 LABELS = ["very weak", "weak", "fair", "strong", "very strong"]
 
+# Maps each substitute character to the letter it's standing in for, so
+# "p4ssw0rd" reads as "password" when checked against the breach list.
+# Deliberately conservative: only digits/symbols with one obvious
+# lookalike letter, so this doesn't collapse unrelated words together.
+LEET_SUBSTITUTIONS = str.maketrans({
+    "4": "a",
+    "@": "a",
+    "8": "b",
+    "3": "e",
+    "1": "i",
+    "!": "i",
+    "0": "o",
+    "5": "s",
+    "$": "s",
+    "7": "t",
+    "+": "t",
+})
+
+
+def _delete_leet(password: str) -> str:
+    """Collapse common leetspeak substitutions to their plain-letter form."""
+    return password.lower().translate(LEET_SUBSTITUTIONS)
+
 
 @lru_cache(maxsize=1)
 def _common_passwords() -> frozenset[str]:
@@ -147,9 +170,18 @@ def assess(password: str) -> Result:
         reasons.append("contains a keyboard walk (e.g. qwerty, asdf)")
         bits -= 12
 
-    if password.lower() in _common_passwords():
+    lowered = password.lower()
+    if lowered in _common_passwords():
         reasons.append("this is one of the most commonly breached passwords")
         bits = 0.0
+    else:
+        deleeted = _delete_leet(password)
+        if deleeted != lowered and deleeted in _common_passwords():
+            reasons.append(
+                f"resembles the commonly breached password '{deleeted}' "
+                "with letters swapped for lookalike digits/symbols"
+            )
+            bits = min(bits, 12.0)
 
     if password.strip("\t\n\r ") == "":
         reasons.append("password is only whitespace")
