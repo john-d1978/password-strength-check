@@ -80,6 +80,15 @@ class Result:
             lines.append(f"  - {reason}")
         return "\n".join(lines)
 
+    def as_dict(self) -> dict:
+        """JSON-serializable view of the result, for --json output."""
+        return {
+            "password_length": self.password_length,
+            "score": self.score,
+            "label": self.label,
+            "reasons": list(self.reasons),
+        }
+
 
 def _charset_bits(password: str) -> float:
     """Rough per-character entropy in bits, based on which character

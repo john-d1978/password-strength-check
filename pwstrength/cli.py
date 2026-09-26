@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import json
 import sys
 
 from .checker import assess
@@ -28,6 +29,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="read the password from the first line of stdin, unhidden",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="print the result as a JSON object instead of plain text",
+    )
     return parser
 
 
@@ -42,7 +48,10 @@ def main(argv: list[str] | None = None) -> int:
         password = getpass.getpass("password: ")
 
     result = assess(password)
-    print(result)
+    if args.json:
+        print(json.dumps(result.as_dict()))
+    else:
+        print(result)
     return 0 if result.score >= 2 else 1
 
 

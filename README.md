@@ -56,6 +56,14 @@ The exit code is `0` if the score is 2 or higher ("fair" or better) and
 $ python -m pwstrength.cli 'qwerty123' || echo "too weak"
 ```
 
+Add `--json` to get a machine-readable result instead of the plain-text
+report, for scripting or feeding into another tool:
+
+```
+$ python -m pwstrength.cli --json 'qwerty123'
+{"password_length": 9, "score": 1, "label": "weak", "reasons": ["contains a keyboard walk (e.g. qwerty, asdf)"]}
+```
+
 ## How scoring works
 
 Score is 0 ("very weak") through 4 ("very strong"), based on an entropy
